@@ -1,0 +1,29 @@
+.App {
+  margin-left: 10px;
+  margin-top: 10px;
+  text-align: left;
+}
+
+.dispelem {
+  width: 250px;
+  height: 330px;
+  align: center;
+  text-align: justify;
+}
+
+.dispinfo {
+  width: 250px;
+  vertical-align: top;
+}
+
+.paginate {
+  text-align: center;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+.query {
+  width: 700px;
+}
