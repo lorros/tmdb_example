@@ -1,0 +1,93 @@
+REQUIREMENTS
+------------
+
+Minimum:
+- node 18.12.1
+- npm 8.19.2
+- http, url, querystring
+
+Ports:
+- 3000, 3001 should be available
+- access to lorro.hu should be available (for static image) - or the image can be copied
+
+Of course, as long as compatibility is maintained, the newer the better.
+
+
+RUNNING
+-------
+
+cache: (in srv directory, port 3001)
+$ node main.js
+
+ui: (in ui directory, port 3000)
+$ npm start
+
+
+Note that UI needs access to http://lorro.hu/tmp/nothing.jpg
+In a live environment, this could be served from a static server.
+
+
+AUTOMATIC TESTING
+-----------------
+
+test (of cache): (in srv directory)
+$ node cache_test.mjs
+
+Expected to print cache logs and no error (Note, cache miss is not an error, it's an expected log).
+
+
+MANUAL TESTING
+--------------
+
+Start cache and ui.
+We expect the following to work:
+- query for a string, press search
+- count of page numbers should be ok (we expect 5 pages as long as total_pages >= 5; total_pages otherwise)
+- current page number should be in bold
+- <<, <, >, >> only displayed when meaningful
+- >, <, >>, << should work
+- page numbers should work, clickable
+- on page change, icons and texts are reloaded
+- it is ok if some movies don't have icon or text (as per db)
+
+
+NOTES
+-----
+
+- CORS is set to *. This is a hack, but normally we wouldn't have 2 servers anyways: UI could be compiled
+  to a single js and served as a static file. This is, however, server-specific
+- Currently, we refer to lorro.hu . Normally, the static files are served from the company's static file
+  servers, carefully considering load (and probably clustering)
+- UI is ugly. If we were to go live with this, we'd need a designer - obviously. CSS is available.
+  20 movies are usually too much for a page, buttons should be designed, design should consider device
+  constraints (it is preferred to have display-specific designs), we don't have a spec of what to do
+  when user hovers or clicks a movie, pagination could use animation, page numbers could be better
+  designed, predictive search while typing would be nice (if possible), etc.
+- Depending on load, clustering might or might not be needed. If we decide to go with clustering, the
+  first few characters of the search expression might be the load balancer's key; therefore, cache can
+  remain in-memory and common storage is not necessary. Cache cleanup is not in sync in this case, but
+  that's not an issue for actual code and tests are fine with it.
+- Since ttl is 2 minutes, I don't think persistence makes sense for cache. If PO needs persistence, then
+  we might e.g. add another hook beside cache_cleanup() to load and always save after queries.
+- I don't really like the idea that we depend on pagination of remote server. What if some other user
+  inserts a movie, deletes a movie, no subscription, etc. Normally, for pagination, we query via an anchor
+  element and a delta, and include an absolute index only for fallback (i.e., when anchor is not found
+  on server side anymore).
+- I was long thinking about whether to have any progress display, even had a trivial implementation, but
+  reply is so quick (<500ms) that changing the images (or anything on the screen) twice is more annoying
+  than useful, therefore I removed it. If PO insists, we can call setState() accordingly in the first
+  line of doSearch().
+- There's plenty of room for optimization. For example, if tmdb queries are really expensive, we might
+  check prefix queries. If the prefix was already queried, we might filter on cache side.
+- Currently, cache cleanup is in sync, based on a timeout, and occurs before the query is made. This could
+  in theory be parallelized - but, if we really want to speed it up, the in-memory caching should be in
+  C++ / assembly / hardware anyways and then different patterns apply.
+- Curently, UI class fits on the screen for me. If it grows, however, I'd make the pagination a distinct
+  component; perhaps also the images and search and thus we could compose the three. Note however, due to
+  state management, this is probably unnecessary complication now. As soon as we have Redis or something
+  similar for global state, we're ok with small components.
+- Way more error handlings
+- Automatizing UI tests, not only cache tests
+- This is now in js. Might make sense to specify types and thus write it in typescript.
+
+
